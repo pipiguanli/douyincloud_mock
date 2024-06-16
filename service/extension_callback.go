@@ -31,9 +31,9 @@ func ExtensionCallback(ctx *gin.Context) {
 
 	if len(utils.GetHeaderByName(ctx, consts.Header_StressTag)) > 0 {
 		// 举例：sleep 1秒
-		//time.Sleep(time.Duration(1) * time.Second)
+		// time.Sleep(time.Duration(1) * time.Second)
 
-		//sleep 随机 100ms ~ 1000ms（0.1s ~ 1s）
+		// sleep 随机 100ms ~ 1000ms（0.1s ~ 1s）
 		num := utils.GenerateRandInt(100, 1000)
 		time.Sleep(time.Duration(num) * time.Millisecond)
 	}

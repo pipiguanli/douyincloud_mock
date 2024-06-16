@@ -34,6 +34,8 @@ func main() {
 	r.POST("/api/douyincloud/prod/extension_callback", service.ExtensionCallback)
 	r.POST("/api/douyincloud/dev/message_callback", service.MessageCallback)
 	r.POST("/api/douyincloud/prod/message_callback", service.MessageCallback)
+	r.POST("/api/douyincloud/dev/webhook_callback", service.WebhookCallback)
+	r.POST("/api/douyincloud/prod/webhook_callback", service.WebhookCallback)
 
 	err := r.Run(":8000")
 	if err != nil {
