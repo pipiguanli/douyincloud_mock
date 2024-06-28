@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/pipiguanli/douyincloud_mock/consts"
 	Err "github.com/pipiguanli/douyincloud_mock/errors"
@@ -51,24 +52,10 @@ func WebhookCallback(ctx *gin.Context) {
 
 	switch reqEvent {
 	case "verify_webhook":
-		type ContentVerifyWebhook struct {
-			Challenge *int64 `json:"challenge"`
-		}
-		type ReqVerifyWebhook struct {
-			Event      *string               `json:"event"`
-			ClientKey  *string               `json:"client_key"`
-			FromUserId *string               `json:"from_user_id"`
-			ToUserId   *string               `json:"to_user_id"`
-			Content    *ContentVerifyWebhook `json:"content"`
-		}
-		type RespVerifyWebhook struct {
-			Challenge *int64          `json:"challenge"`
-			QaExtra   *WebhookQaExtra `json:"qa_extra"`
-		}
-		var req ReqVerifyWebhook
-		err := ctx.Bind(&req)
-		if err != nil {
-			TemplateFailure(ctx, Err.NewQaError(Err.ParamsResolveErr, "ctx.Bind(&req)发生异常", err.Error()))
+		// 反序列化
+		req := &ReqVerifyWebhook{}
+		if err := json.Unmarshal([]byte(reqBodyString), req); err != nil {
+			TemplateFailure(ctx, Err.NewQaError(Err.ParamsResolveErr, "reqBodyString反序列化异常", err.Error()))
 			return
 		}
 		resp := &RespVerifyWebhook{
@@ -86,21 +73,29 @@ func WebhookCallback(ctx *gin.Context) {
 
 	default:
 		httpStatusCode := 200
-		resp := &WebhookCallbackResp{}
+		resp := &WebhookCallbackCommonResp{}
 		ctx.JSON(httpStatusCode, resp)
 		log.Printf("[QA] response=%+v, httpStatusCode=%+v", utils.ToJsonString(resp), httpStatusCode)
 	}
 }
 
-type WebhookCallbackReq struct {
-	Event      *string      `json:"event"`
-	ClientKey  *string      `json:"client_key"`
-	FromUserId *string      `json:"from_user_id"`
-	ToUserId   *string      `json:"to_user_id"`
-	Content    *interface{} `json:"content"`
+type ContentVerifyWebhook struct {
+	Challenge *int64 `json:"challenge"`
 }
 
-type WebhookCallbackResp struct {
+type ReqVerifyWebhook struct {
+	Event      *string               `json:"event"`
+	ClientKey  *string               `json:"client_key"`
+	FromUserId *string               `json:"from_user_id"`
+	ToUserId   *string               `json:"to_user_id"`
+	Content    *ContentVerifyWebhook `json:"content"`
+}
+type RespVerifyWebhook struct {
+	Challenge *int64          `json:"challenge"`
+	QaExtra   *WebhookQaExtra `json:"qa_extra"`
+}
+
+type WebhookCallbackCommonResp struct {
 	ErrNo   int         `json:"err_no"`
 	ErrTips string      `json:"err_tips"`
 	Content interface{} `json:"content"`
