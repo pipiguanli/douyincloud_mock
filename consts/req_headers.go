@@ -2,6 +2,7 @@ package consts
 
 const (
 	Header_StressTag                 = "X-Tt-Stress"
+	Header_X_TT_Logid                = "X-Tt-Logid"
 	Header_StressValue               = "test"
 	CommonHead_DataFormat            = "Content-Type"
 	CommonHead_DataFormatJSON        = "application/json"

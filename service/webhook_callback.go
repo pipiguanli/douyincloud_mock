@@ -15,6 +15,7 @@ type WebhookQaExtra struct {
 	QaPath           *string `json:"webhook_qa_path"`
 	WebhookSignature *string `json:"webhookheader_x_douyin_signature"`
 	WebhookMsgId     *string `json:"webhookheader_msg_id"`
+	Logid            *string `json:"logid"`
 }
 
 func WebhookCallback(ctx *gin.Context) {
@@ -23,10 +24,12 @@ func WebhookCallback(ctx *gin.Context) {
 	// 请求头
 	webhookSignature := ctx.Request.Header.Get(consts.WebhookHeader_X_Douyin_Signature)
 	webhookMsgId := ctx.Request.Header.Get(consts.WebhookHeader_Msg_Id)
+	logid := ctx.Request.Header.Get(consts.Header_X_TT_Logid)
 	qaExtra := &WebhookQaExtra{
 		QaPath:           &reqPath,
 		WebhookSignature: &webhookSignature,
 		WebhookMsgId:     &webhookMsgId,
+		Logid:            &logid,
 	}
 	//if err := utils.CheckHeaders(ctx); err != nil {
 	//	TemplateFailure(ctx, Err.NewQaError(Err.InvalidParamErr, err.Error()))
@@ -40,13 +43,11 @@ func WebhookCallback(ctx *gin.Context) {
 	//}
 
 	// 请求体
-
 	var reqBodyString string
 	if ctx.Request.Body != nil {
 		reqBodyBytes, _ := ioutil.ReadAll(ctx.Request.Body)
 		reqBodyString = string(reqBodyBytes)
 	}
-
 	reqEvent := gjson.Get(reqBodyString, "event").String()
 	log.Printf("[QA] 请求体request=%+v ,req.event=%+v", reqBodyString, reqEvent)
 
@@ -69,13 +70,13 @@ func WebhookCallback(ctx *gin.Context) {
 		}
 		httpStatusCode := 200
 		ctx.JSON(httpStatusCode, resp)
-		log.Printf("[QA] response=%+v, httpStatusCode=%+v", utils.ToJsonString(resp), httpStatusCode)
+		log.Printf("[QA] 响应体response=%+v, httpStatusCode=%+v", utils.ToJsonString(resp), httpStatusCode)
 
 	default:
 		httpStatusCode := 200
 		resp := &WebhookCallbackCommonResp{}
 		ctx.JSON(httpStatusCode, resp)
-		log.Printf("[QA] response=%+v, httpStatusCode=%+v", utils.ToJsonString(resp), httpStatusCode)
+		log.Printf("[QA] 响应体response=%+v, httpStatusCode=%+v", utils.ToJsonString(resp), httpStatusCode)
 	}
 }
 
