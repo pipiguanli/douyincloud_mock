@@ -30,13 +30,13 @@ func WebhookCallback(ctx *gin.Context) {
 		num := utils.GenerateRandInt(100, 500)
 		time.Sleep(time.Duration(num) * time.Millisecond)
 	}
-
-	// 请求体
 	qaExtra := &WebhookQaExtra{
 		QaPath:           &reqPath,
 		WebhookSignature: &webhookSignature,
 		WebhookMsgId:     &webhookMsgId,
 	}
+
+	// 请求体
 	var commonReq WebhookCallbackReq
 	err := ctx.Bind(&commonReq)
 	if err != nil {
