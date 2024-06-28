@@ -74,6 +74,12 @@ func WebhookCallback(ctx *gin.Context) {
 		httpStatusCode := 200
 		ctx.JSON(httpStatusCode, resp)
 		log.Printf("[QA] response=%+v, httpStatusCode=%+v", utils.ToJsonString(resp), httpStatusCode)
+
+	default:
+		httpStatusCode := 200
+		resp := &WebhookCallbackResp{}
+		ctx.JSON(httpStatusCode, resp)
+		log.Printf("[QA] response=%+v, httpStatusCode=%+v", utils.ToJsonString(resp), httpStatusCode)
 	}
 }
 
