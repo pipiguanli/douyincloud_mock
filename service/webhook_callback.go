@@ -5,8 +5,9 @@ import (
 	"github.com/pipiguanli/douyincloud_mock/consts"
 	Err "github.com/pipiguanli/douyincloud_mock/errors"
 	"github.com/pipiguanli/douyincloud_mock/utils"
+	"github.com/tidwall/gjson"
+	"io/ioutil"
 	"log"
-	"time"
 )
 
 type WebhookQaExtra struct {
@@ -21,55 +22,63 @@ func WebhookCallback(ctx *gin.Context) {
 	// 请求头
 	webhookSignature := ctx.Request.Header.Get(consts.WebhookHeader_X_Douyin_Signature)
 	webhookMsgId := ctx.Request.Header.Get(consts.WebhookHeader_Msg_Id)
-	if err := utils.CheckHeaders(ctx); err != nil {
-		TemplateFailure(ctx, Err.NewQaError(Err.InvalidParamErr, err.Error()))
-		return
-	}
-	if len(utils.GetHeaderByName(ctx, consts.Header_StressTag)) > 0 {
-		// sleep 随机 100ms ~ 1000ms（0.1s ~ 0.5s）
-		num := utils.GenerateRandInt(100, 500)
-		time.Sleep(time.Duration(num) * time.Millisecond)
-	}
 	qaExtra := &WebhookQaExtra{
 		QaPath:           &reqPath,
 		WebhookSignature: &webhookSignature,
 		WebhookMsgId:     &webhookMsgId,
 	}
+	//if err := utils.CheckHeaders(ctx); err != nil {
+	//	TemplateFailure(ctx, Err.NewQaError(Err.InvalidParamErr, err.Error()))
+	//	return
+	//}
+
+	//if len(utils.GetHeaderByName(ctx, consts.Header_StressTag)) > 0 {
+	//	// sleep 随机 100ms ~ 1000ms（0.1s ~ 0.5s）
+	//	num := utils.GenerateRandInt(100, 500)
+	//	time.Sleep(time.Duration(num) * time.Millisecond)
+	//}
 
 	// 请求体
-	var commonReq WebhookCallbackReq
-	err := ctx.Bind(&commonReq)
-	if err != nil {
-		TemplateFailure(ctx, Err.NewQaError(Err.ParamsResolveErr))
-		return
-	}
-	log.Printf("[QA] request=%+v", utils.ToJsonString(&commonReq))
 
-	switch commonReq.Event {
+	var reqBodyString string
+	if ctx.Request.Body != nil {
+		reqBodyBytes, _ := ioutil.ReadAll(ctx.Request.Body)
+		reqBodyString = string(reqBodyBytes)
+	}
+
+	reqEvent := gjson.Get(reqBodyString, "event").String()
+	log.Printf("[QA] 请求体request=%+v ,req.event=%+v", reqBodyString, reqEvent)
+
+	switch reqEvent {
 	case "verify_webhook":
 		type ContentVerifyWebhook struct {
-			Challenge string `json:"challenge"`
+			Challenge *int64 `json:"challenge"`
 		}
 		type ReqVerifyWebhook struct {
-			Event      string               `json:"event"`
-			ClientKey  string               `json:"client_key"`
-			FromUserId string               `json:"from_user_id"`
-			ToUserId   string               `json:"to_user_id"`
-			Content    ContentVerifyWebhook `json:"content"`
+			Event      *string               `json:"event"`
+			ClientKey  *string               `json:"client_key"`
+			FromUserId *string               `json:"from_user_id"`
+			ToUserId   *string               `json:"to_user_id"`
+			Content    *ContentVerifyWebhook `json:"content"`
 		}
 		type RespVerifyWebhook struct {
-			Challenge string          `json:"challenge"`
+			Challenge *int64          `json:"challenge"`
 			QaExtra   *WebhookQaExtra `json:"qa_extra"`
 		}
 		var req ReqVerifyWebhook
 		err := ctx.Bind(&req)
 		if err != nil {
-			TemplateFailure(ctx, Err.NewQaError(Err.ParamsResolveErr))
+			TemplateFailure(ctx, Err.NewQaError(Err.ParamsResolveErr, "ctx.Bind(&req)发生异常", err.Error()))
 			return
 		}
 		resp := &RespVerifyWebhook{
-			Challenge: req.Content.Challenge,
-			QaExtra:   qaExtra,
+			Challenge: func() *int64 {
+				if req.Content != nil {
+					return req.Content.Challenge
+				}
+				return nil
+			}(),
+			QaExtra: qaExtra,
 		}
 		httpStatusCode := 200
 		ctx.JSON(httpStatusCode, resp)
@@ -84,11 +93,11 @@ func WebhookCallback(ctx *gin.Context) {
 }
 
 type WebhookCallbackReq struct {
-	Event      string      `json:"event"`
-	ClientKey  string      `json:"client_key"`
-	FromUserId string      `json:"from_user_id"`
-	ToUserId   string      `json:"to_user_id"`
-	Content    interface{} `json:"content"`
+	Event      *string      `json:"event"`
+	ClientKey  *string      `json:"client_key"`
+	FromUserId *string      `json:"from_user_id"`
+	ToUserId   *string      `json:"to_user_id"`
+	Content    *interface{} `json:"content"`
 }
 
 type WebhookCallbackResp struct {
